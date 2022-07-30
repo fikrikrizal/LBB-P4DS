@@ -1,0 +1,238 @@
+---
+title: "Reccomendation Place in Yogyakarta"
+author: "Fikri K Rizal"
+date: "2022-07-26"
+output:
+  html_document:
+    theme: cosmo
+    highlight: tango
+    toc: true
+    toc_float:
+      collapsed: true
+    number_sections: true
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+# clear-up the environment
+rm(list = ls())
+
+# chunk options
+knitr::opts_chunk$set(
+  fig.align = "center",
+  message = FALSE,
+  warning = FALSE,
+  comment = "#>"
+)
+```
+
+# Explanation
+
+Before travelling, usually we will make a holiday plan about our destination. 
+This project give a little describe about some tourist destination in Yogyakarta.
+
+# Input Data
+
+```{r}
+rating <- read.csv("Data Input/tourism_rating.csv")
+place <- read.csv("Data Input/tourism_with_id.csv")
+user <- read.csv("Data Input/user.csv")
+```
+
+So!! This is our destination  data, let's go to next step
+
+## Data Inspection
+
+There are many ways to inspect our data, we can use 'head()', 'tail()', 'dim()', or 'names()'.
+We have 3 datas, so we will check each data.
+
+### Rating Data
+
+```{r}
+head(rating)
+```
+
+```{r}
+dim(rating)
+```
+```{r}
+names(rating)
+```
+
+### Place Data
+
+```{r}
+head(place)
+```
+
+```{r}
+dim(place)
+```
+```{r}
+names(place)
+```
+
+### User Data
+
+```{r}
+head(user)
+```
+
+```{r}
+dim(user)
+```
+```{r}
+names(user)
+```
+From rating, place and user data, there are correlation from each other. Rating & place data, have correlation from "Place_Id", and rating & user data have correlation from User_Id.
+
+# Data Cleansing
+
+## Check Data Types
+
+```{r}
+str(rating)
+str(place)
+str(user)
+```
+
+## Delete Unuser Column
+
+```{r}
+place <- place[,!names(place)%in% c("X","X.1","Time_Minutes"), drop=F]
+head(place)
+```
+
+## Select Location only from Yogyakarta
+
+```{r}
+place_yogya <- place[place$City=="Yogyakarta",]
+head(place_yogya)
+```
+
+## Convert Data Types
+
+```{r}
+place_yogya$Place_Name <- as.factor(place_yogya$Place_Name)
+place_yogya$Category <- as.factor(place_yogya$Category)
+```
+
+
+## Merge Rating Data, Place Data & User Data
+
+```{r}
+place_yogya_merge <- merge(place_yogya,rating,by.x = "Place_Id", by.y = "Place_Id")
+place_yogya_merge <- merge(place_yogya_merge,user,by.x = "User_Id", by.y = "User_Id")
+head(place_yogya_merge)
+```
+
+# Data Manipulation & Transformation
+
+## Make rating frequncy place data
+
+```{r}
+place_yogya_rating_freq <- aggregate(x=Place_Ratings~Place_Name,
+                                     data = place_yogya_merge, 
+                                     FUN = length)
+```
+
+### Top 5 Most Rated Place
+
+```{r}
+head(place_yogya_rating_freq[
+                            order(place_yogya_rating_freq$Place_Ratings,
+                            decreasing = T),],5)
+```
+
+"Pantai Parangtritis" is the most rated place.
+
+### Top 5 Highest Rating Place
+
+```{r}
+head(place_yogya[order(place_yogya$Rating,decreasing = T),names(place_yogya)%in%c("Place_Name","Rating")],5)
+```
+
+"Desa Wisata Sungai Code Jogja Kota" and "Kauman Pakualaman Yogyakarta" are the highest rating, 5 of 5.
+
+## Number of Place by Category
+
+```{r}
+number_category <- as.data.frame(sort(table(place_yogya$Category),decreasing = T))
+number_category
+```
+
+### Plot of Number of Place by Category
+
+```{r}
+barplot(Freq~Var1, number_category)
+```
+
+"Taman Hiburan" Category have most destination place.
+
+## Average Price by Category
+
+```{r}
+aggregate(x=Price~Category,data = place_yogya, FUN = mean)
+```
+
+"Budaya" Category has the highest average price.
+
+### 5 Highest Charges Place
+
+```{r}
+place_price <- aggregate(x=Price~Place_Name,data = place_yogya, FUN = max)
+place_price[order(place_price$Price,decreasing = T),][0:5,]
+```
+"Goa Jomblang" has highest price place.
+
+### 5 Lowest Charges Place
+
+```{r}
+place_price_charge <- place_price[place_price$Price!=0,]
+place_price_charge[order(place_price_charge$Price,decreasing = F),][0:5,]
+```
+
+### Free Charge by Place
+
+```{r}
+place_yogya[place_yogya$Price==0,2]
+```
+
+There are 25 free charge places 
+
+### Free Charge by Category
+
+```{r}
+as.data.frame(table(place_yogya[place_yogya$Price==0,4]))
+```
+
+Taman Hiburan is most free charge Place
+
+## Top 5 Visitors Origin
+
+```{r}
+as.data.frame(sort(table(place_yogya_merge$Location),decreasing = T)[1:5])
+```
+
+
+# Conclusion and Travelling Reccomendation
+
+Yogyakarta have many travelling destination, from free of charges and charges. Yogyakarta have 25 free charge travelling destination. So, if you want to travelling around yogyakarta with low budget, you can consider to visit those 25 places. But in Yogyakarta, also there are charges place with low charge, start from IDR 2.000,00 and the highest charges place IDR 500.000,00.
+If budget not in your concern, you can choose your destination from most rated and highest rating place in Yogyakarta.
+Happy Holiday!!! 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
